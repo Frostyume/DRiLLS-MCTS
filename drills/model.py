@@ -329,7 +329,6 @@ class A2C:
                 running_add = rewards[i]
             discounted[i] = running_add
 
-        # 标准化
         discounted -= np.mean(discounted)
         discounted /= (np.std(discounted) + 1e-8)
         return discounted

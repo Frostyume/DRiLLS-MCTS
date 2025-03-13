@@ -134,58 +134,34 @@ class FPGASession:
         return lut_6, levels
     
     def _get_reward(self, lut_6, levels):
-        constraint_met = True
-        optimization_improvement = 0    # (-1, 0, 1) <=> (worse, same, improvement)
-        constraint_improvement = 0      # (-1, 0, 1) <=> (worse, same, improvement)
+        # 权重参数
+        w_opt = 0.7  # 优化目标的权重
+        w_con = 0.3  # 约束条件的权重
 
-        # check optimizing parameter
-        if lut_6 < self.lut_6:
-            optimization_improvement = 1
-        elif lut_6 == self.lut_6:
-            optimization_improvement = 0
+        # 优化目标的改进程度
+        opt_improvement = (self.lut_6 - lut_6) / self.lut_6  # 相对改进比例
+
+        # 约束条件的满足情况
+        max_levels = self.params["fpga_mapping"]["levels"]
+        if levels <= max_levels:
+            constraint_met = True
+            con_improvement = (max_levels - levels) / max_levels  # 相对改进比例
         else:
-            optimization_improvement = -1
-        
-        # check constraint parameter
-        if levels > self.params["fpga_mapping"]["levels"]:
             constraint_met = False
-            if levels < self.levels:
-                constraint_improvement = 1
-            elif levels == self.levels:
-                constraint_improvement = 0
-            else:
-                constraint_improvement = -1
+            con_improvement = - (levels - max_levels) / max_levels  # 相对违反程度
 
-        # now calculate the reward
-        return self._reward_table(constraint_met, constraint_improvement, optimization_improvement)
-    
-    def _reward_table(self, constraint_met, contraint_improvement, optimization_improvement):
-        return {
-            True: {
-                0: {
-                    1: 3,
-                    0: 0,
-                    -1: -1
-                }
-            },
-            False: {
-                1: {
-                    1: 3,
-                    0: 2,
-                    -1: 1
-                },
-                0: {
-                    1: 2,
-                    0: 0,
-                    -1: -2
-                },
-                -1: {
-                    1: -1,
-                    0: -2,
-                    -1: -3
-                }
-            }
-        }[constraint_met][contraint_improvement][optimization_improvement]
+        # 奖励计算
+        if constraint_met:
+            # 如果约束条件满足，奖励由优化目标和约束条件的改进共同决定
+            reward = w_opt * opt_improvement + w_con * con_improvement
+        else:
+            # 如果约束条件未满足，引入较大的惩罚
+            penalty = -10  # 惩罚值
+            reward = penalty + w_opt * opt_improvement
+
+        # 奖励归一化（可选）
+        # reward = max(-1, min(1, reward))  # 将奖励限制在 [-1, 1] 范围内
+        return reward
     
     def _get_state(self, design_file):
         return extract_features(design_file, self.params['yosys_binary'], self.params['abc_binary'])
