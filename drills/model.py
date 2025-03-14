@@ -146,6 +146,12 @@ class A2C:
 
         self.state_input = tf.placeholder(tf.float32, [None, self.state_size])
 
+
+         # 修改损失函数
+        self.mcts_probs = tf.placeholder(tf.float32, [None, self.num_actions])
+        # 添加MCTS初始化
+        self.mcts = MCTS(self, exploration_weight=1.5)
+        
         # Define any additional placeholders needed for training your agent here:
         self.actions = tf.placeholder(tf.float32, [None, self.num_actions])
         self.discounted_episode_rewards_ = tf.placeholder(tf.float32, [None, ])
@@ -155,11 +161,6 @@ class A2C:
         self.loss_val = self.loss()
         self.train_op = self.optimizer()
         self.session = tf.Session()
-
-         # 修改损失函数
-        self.mcts_probs = tf.placeholder(tf.float32, [None, self.num_actions])
-        # 添加MCTS初始化
-        self.mcts = MCTS(self, exploration_weight=1.5)
 
         # model saving/restoring
         self.model_dir = options['model_dir']
