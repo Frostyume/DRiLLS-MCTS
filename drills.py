@@ -69,7 +69,7 @@ if __name__ == '__main__':
         for i in range(options['episodes']):
             log('Episode: ' + str(i + 1))
             start = time.time()
-            total_reward = learner.train_episode(i)
+            total_reward = learner.train_episode()
             end = time.time()
             all_rewards.append(total_reward)
             log('Episode: ' + str(i + 1) + ' - done with total reward = ' + str(total_reward))

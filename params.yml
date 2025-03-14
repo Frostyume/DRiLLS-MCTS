@@ -14,8 +14,11 @@ abc_binary: yosys-abc
 yosys_binary: yosys
 
 # path of the design file in one of the accepted formats by ABC
-design_name: square
-design_file: design/
+design_name: multiplier
+design_file: design/multiplier.v
+
+# the directory to hold the playground an agent uses to practice
+playground_dir: playground/multiplier
 
 # standard cell library mapping
 mapping:
@@ -37,10 +40,7 @@ optimizations:
   - resub -z
   - balance
 
-# the directory to hold the playground an agent uses to practice
-playground_dir: playground/
-
 # agent training parameters
 episodes: 100
-iterations: 50
+iterations: 25
 model_dir: /tmp/brain/model.ckpt   # must be absolute path

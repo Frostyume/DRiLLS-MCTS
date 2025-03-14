@@ -51,7 +51,7 @@ class MCTS:
             # 回溯更新
             self._backpropagate(node, value)
         
-        return self._choose_action(root)
+        return root
     
     def _select_child(self, node):
         # 使用UCT算法选择子节点
@@ -145,13 +145,8 @@ class A2C:
         self.normalizer = Normalizer(self.state_size)
 
         self.state_input = tf.placeholder(tf.float32, [None, self.state_size])
-
-
          # 修改损失函数
         self.mcts_probs = tf.placeholder(tf.float32, [None, self.num_actions])
-        # 添加MCTS初始化
-        self.mcts = MCTS(self, exploration_weight=1.5)
-        
         # Define any additional placeholders needed for training your agent here:
         self.actions = tf.placeholder(tf.float32, [None, self.num_actions])
         self.discounted_episode_rewards_ = tf.placeholder(tf.float32, [None, ])
@@ -161,6 +156,9 @@ class A2C:
         self.loss_val = self.loss()
         self.train_op = self.optimizer()
         self.session = tf.Session()
+
+        # 添加MCTS初始化
+        self.mcts = MCTS(self, exploration_weight=1.5)
 
         # model saving/restoring
         self.model_dir = options['model_dir']
@@ -174,6 +172,7 @@ class A2C:
         
         self.gamma = 0.99
         self.learning_rate = 0.01
+
 
     def optimizer(self):
         """
