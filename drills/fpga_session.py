@@ -152,7 +152,7 @@ class FPGASession:
         # 动态惩罚系数（基于当前最佳值的比例）
         best_lut_6 = self.best_known_lut_6_meets_constraint[0]
         best_levels = self.best_known_levels[0]
-        penalty = -abs(best_lut_6 / best_levels)
+        penalty = -0.01
 
         # 奖励衰减因子（鼓励更早改进）
         decay_factor = 0.95

@@ -27,7 +27,7 @@ mapping:
 
 # FPGA mapping - exlusive with the above
 fpga_mapping:
-  levels: 1000
+  levels: 100
   lut_inputs: 6
 
 # add more optimization to the toolbox
@@ -46,5 +46,5 @@ iterations: 25
 model_dir: /tmp/brain/model.ckpt   # must be absolute path
 
 # Early stopping
-early_stopping: true
+early_stopping: 1
 patience: 10

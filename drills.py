@@ -78,15 +78,16 @@ if __name__ == '__main__':
             log('Episode: ' + str(i + 1) + ' - done with total reward = ' + str(total_reward))
             log('Episode ' + str(i + 1) + ' Run Time ~ ' + str((start - end) / 60) + ' minutes.')
             print('')
-            if options['early_stopping'] == 'true':
+            if options['early_stopping'] == 1:
                 current_best_result_episode = learner.game.get_best_result_episode()
+                log(f"best_result_episode:{current_best_result_episode}")
                 if current_best_result_episode > best_result_episode:
                     best_result_episode = current_best_result_episode
                     no_improvement_count = 0
                 else:
                     no_improvement_count += 1
                 if no_improvement_count >= options['patience']:
-                    log(f"Early stopping at episode {i} due to no improvement in LUT count for {args.patience} episodes.")
+                    log(f"Early stopping at episode {i} due to no improvement in LUT count for {options['patience']} episodes.")
                     break
 
         training_end_time = time.time()

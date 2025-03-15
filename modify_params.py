@@ -11,6 +11,7 @@ with open(r'./params.yml', 'r', encoding='utf-8') as file:
 
 # 修改 design_name
 new_design_name = 'multiplier'
+# new_design_name = 'adder'
 params['design_name'] = new_design_name
 
 # 同步修改 design_file 和 playground_dir
