@@ -90,7 +90,6 @@ if __name__ == '__main__':
                     log(f"Early stopping at episode {i+1} due to no improvement in LUT count for {options['patience']} episodes.")
                     break
 
-
         training_end_time = time.time()
         log('Total Training Run Time ~ ' + str((training_end_time - training_start_time) / 60) + ' minutes.')
 
