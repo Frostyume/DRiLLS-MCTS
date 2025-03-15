@@ -44,3 +44,7 @@ optimizations:
 episodes: 100
 iterations: 25
 model_dir: /tmp/brain/model.ckpt   # must be absolute path
+
+# Early stopping
+early_stopping: true
+patience: 10

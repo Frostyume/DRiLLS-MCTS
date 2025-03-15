@@ -66,6 +66,9 @@ if __name__ == '__main__':
         all_rewards = []
         learner = A2C(options, load_model=args.load_model, fpga_mapping=fpga_mapping)
         training_start_time = time.time()
+
+        best_result_episode = -1
+        no_improvement_count = 0
         for i in range(options['episodes']):
             log('Episode: ' + str(i + 1))
             start = time.time()
@@ -75,6 +78,17 @@ if __name__ == '__main__':
             log('Episode: ' + str(i + 1) + ' - done with total reward = ' + str(total_reward))
             log('Episode ' + str(i + 1) + ' Run Time ~ ' + str((start - end) / 60) + ' minutes.')
             print('')
+            if options['early_stopping'] == 'true':
+                current_best_result_episode = learner.game.get_best_result_episode()
+                if current_best_result_episode > best_result_episode:
+                    best_result_episode = current_best_result_episode
+                    no_improvement_count = 0
+                else:
+                    no_improvement_count += 1
+                if no_improvement_count >= options['patience']:
+                    log(f"Early stopping at episode {i} due to no improvement in LUT count for {args.patience} episodes.")
+                    break
+
         training_end_time = time.time()
         log('Total Training Run Time ~ ' + str((training_end_time - training_start_time) / 60) + ' minutes.')
 

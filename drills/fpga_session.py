@@ -8,6 +8,7 @@
 
 import os
 import re
+import math
 import datetime
 import numpy as np
 from subprocess import check_output
@@ -55,7 +56,7 @@ class FPGASession:
             os.makedirs(self.episode_dir)
         
         # logging
-        log_file = os.path.join(self.episode_dir, self.params['design_name'] + '_log.csv')
+        log_file = os.path.join(self.episode_dir, self.params['design_name'] + '_log_' + str(self.episode) + '.csv')
         if self.log:
             self.log.close()
         self.log = open(log_file, 'w')
@@ -91,6 +92,9 @@ class FPGASession:
 
         return new_state, reward, self.iteration == self.params['iterations'], None
 
+    def get_best_result_episode(self):
+        return self.best_known_lut_6_meets_constraint[2]
+
     def _run(self):
         """
         run ABC on the given design file with the sequence of commands
@@ -114,11 +118,17 @@ class FPGASession:
             self.lut_6, self.levels = lut_6, levels
             # get new state of the circuit
             state = self._get_state(output_design_file)
+            if self.levels > self.params['fpga_mapping']['levels'] or self.lut_6 >= \
+                    self.best_known_lut_6_meets_constraint[0]:
+                os.remove(output_design_file)
+                os.remove(output_design_file_mapped)
             return state, reward
         except Exception as e:
+            os.remove(output_design_file)
+            os.remove(output_design_file_mapped)
             print(e)
             return None, None
-        
+
     def _get_metrics(self, stats):
         """
         parse LUT count and levels from the stats command of ABC
@@ -132,36 +142,47 @@ class FPGASession:
         lut_6 = int(ob.group().split('=')[1].strip())
 
         return lut_6, levels
-    
+
     def _get_reward(self, lut_6, levels):
-        # 权重参数
-        w_opt = 0.7  # 优化目标的权重
-        w_con = 0.3  # 约束条件的权重
+        # 动态权重调整参数
+        base_opt_weight = 1
+        base_con_weight = 1
+        constraint = self.params["fpga_mapping"]["levels"]
 
-        # 优化目标的改进程度
-        opt_improvement = (self.lut_6 - lut_6) / self.lut_6  # 相对改进比例
+        # 动态惩罚系数（基于当前最佳值的比例）
+        best_lut_6 = self.best_known_lut_6_meets_constraint[0]
+        best_levels = self.best_known_levels[0]
+        penalty = -abs(best_lut_6 / best_levels)
 
-        # 约束条件的满足情况
-        max_levels = self.params["fpga_mapping"]["levels"]
-        if levels <= max_levels:
+        # 奖励衰减因子（鼓励更早改进）
+        decay_factor = 0.95
+
+        # 层级约束满足比例
+        con_ratio = levels / constraint if levels > 0 else 1.0
+        dynamic_opt_weight = base_opt_weight / (1 + con_ratio)
+        dynamic_con_weight = base_con_weight * con_ratio
+
+        # 改进程度计算（添加平滑项避免除零）
+        opt_improvement = (self.lut_6 - lut_6) / (self.lut_6 + 1e-6)
+
+        # 约束违反程度计算
+        level_delta = levels - constraint
+        if level_delta <= 0:
+            con_improvement = (constraint - levels) / (constraint + 1e-6)
             constraint_met = True
-            con_improvement = (max_levels - levels) / max_levels  # 相对改进比例
         else:
+            # 指数级惩罚增长
+            con_improvement = - math.exp(level_delta / constraint)
             constraint_met = False
-            con_improvement = - (levels - max_levels) / max_levels  # 相对违反程度
 
-        # 奖励计算
-        if constraint_met:
-            # 如果约束条件满足，奖励由优化目标和约束条件的改进共同决定
-            reward = w_opt * opt_improvement + w_con * con_improvement
+        # 综合奖励计算
+        if constraint_met and opt_improvement > 0:
+            reward = (dynamic_opt_weight * opt_improvement +
+                      dynamic_con_weight * con_improvement)
         else:
-            # 如果约束条件未满足，引入较大的惩罚
-            penalty = -10  # 惩罚值
-            reward = penalty + w_opt * opt_improvement
+            reward = penalty
 
-        # 奖励归一化（可选）
-        # reward = max(-1, min(1, reward))  # 将奖励限制在 [-1, 1] 范围内
-        return reward
+        return reward * (decay_factor ** self.iteration)
     
     def _get_state(self, design_file):
         return extract_features(design_file, self.params['yosys_binary'], self.params['abc_binary'])
