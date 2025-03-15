@@ -87,7 +87,7 @@ if __name__ == '__main__':
                 else:
                     no_improvement_count += 1
                 if no_improvement_count >= options['patience']:
-                    log(f"Early stopping at episode {i} due to no improvement in LUT count for {options['patience']} episodes.")
+                    log(f"Early stopping at episode {i+1} due to no improvement in LUT count for {options['patience']} episodes.")
                     break
 
         training_end_time = time.time()
