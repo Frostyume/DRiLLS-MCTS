@@ -267,7 +267,7 @@ class A2C:
         episode_actions = []
         episode_mcts_probs = []  # 新增MCTS策略记录
         episode_rewards = []
-        
+
         while not done:
             log('  iteration: ' + str(self.game.iteration))
             # 使用MCTS选择动作
@@ -319,7 +319,7 @@ class A2C:
     def _compute_n_step_rewards(self, rewards, gamma=0.99, n_step=5):
         """改进的N-step奖励计算"""
         discounted = np.zeros_like(rewards, dtype=np.float32)
-        running_add = 0
+        running_add = 0.0
 
         # 反向计算
         for i in reversed(range(len(rewards))):

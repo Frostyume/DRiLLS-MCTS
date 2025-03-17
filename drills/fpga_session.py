@@ -51,7 +51,7 @@ class FPGASession:
         self.episode += 1
         self.lut_6, self.levels = float('inf'), float('inf')
         self.sequence = ['strash']
-        self.episode_dir = os.path.join(self.params['playground_dir'], str(self.episode))
+        self.episode_dir = os.path.join(self.params['playground_dir'], self.params['design_name'] + '_' + str(self.episode))
         if not os.path.exists(self.episode_dir):
             os.makedirs(self.episode_dir)
         
@@ -100,9 +100,8 @@ class FPGASession:
         run ABC on the given design file with the sequence of commands
         """
         self.iteration += 1
-        output_design_file = os.path.join(self.episode_dir, str(self.iteration) + '.v')
-        output_design_file_mapped = os.path.join(self.episode_dir, str(self.iteration) + '-mapped.v')
-    
+        output_design_file = os.path.join(self.episode_dir, f"{self.params['design_name']}_{self.episode}_{self.iteration}.v")
+        output_design_file_mapped = os.path.join(self.episode_dir, f"{self.params['design_name']}_{self.episode}_{self.iteration}-mapped.v")
         abc_command = 'read ' + self.params['design_file'] + '; '
         abc_command += ';'.join(self.sequence) + '; '
         abc_command += 'write ' + output_design_file + '; '
@@ -152,11 +151,10 @@ class FPGASession:
         # 动态惩罚系数（基于当前最佳值的比例）
         best_lut_6 = self.best_known_lut_6_meets_constraint[0]
         best_levels = self.best_known_levels[0]
-        penalty = -0.01
+        penalty = -0.1
 
         # 奖励衰减因子（鼓励更早改进）
-        decay_factor = 0.95
-
+        decay_factor = 0.9
         # 层级约束满足比例
         con_ratio = levels / constraint if levels > 0 else 1.0
         dynamic_opt_weight = base_opt_weight / (1 + con_ratio)
@@ -177,10 +175,14 @@ class FPGASession:
 
         # 综合奖励计算
         if constraint_met and opt_improvement > 0:
-            reward = (dynamic_opt_weight * opt_improvement +
+            reward = (dynamic_opt_weight / (-math.log(opt_improvement)) +
                       dynamic_con_weight * con_improvement)
         else:
             reward = penalty
+
+        # 添加多样性奖励项
+        diversity_bonus = 0.1 * (math.log(len(set(self.sequence)) + 1e-5) - 1)
+        reward += diversity_bonus
 
         return reward * (decay_factor ** self.iteration)
     

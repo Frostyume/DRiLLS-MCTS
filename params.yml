@@ -14,11 +14,11 @@ abc_binary: yosys-abc
 yosys_binary: yosys
 
 # path of the design file in one of the accepted formats by ABC
-design_name: multiplier
-design_file: design/multiplier.v
-
+design_dir: design
+design_name: adder
+design_file: design/adder.v
 # the directory to hold the playground an agent uses to practice
-playground_dir: playground/multiplier
+playground_dir: playground/adder
 
 # standard cell library mapping
 mapping:
@@ -27,7 +27,7 @@ mapping:
 
 # FPGA mapping - exlusive with the above
 fpga_mapping:
-  levels: 100
+  levels: 10000
   lut_inputs: 6
 
 # add more optimization to the toolbox
