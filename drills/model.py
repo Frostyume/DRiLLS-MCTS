@@ -279,6 +279,7 @@ class A2C:
             #     feed_dict={self.state_input: state.reshape([1, self.state_size])})
             # action = np.random.choice(range(action_probability_distribution.shape[1]), \
             #     p=action_probability_distribution.ravel())
+
             new_state, reward, done, _ = self.game.step(action)
             
             # append this step

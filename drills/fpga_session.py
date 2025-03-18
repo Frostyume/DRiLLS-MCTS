@@ -159,7 +159,6 @@ class FPGASession:
         con_ratio = levels / constraint if levels > 0 else 1.0
         dynamic_opt_weight = base_opt_weight / (1 + con_ratio)
         dynamic_con_weight = base_con_weight * con_ratio
-
         # 改进程度计算（添加平滑项避免除零）
         opt_improvement = (self.lut_6 - lut_6) / (self.lut_6 + 1e-6)
 
