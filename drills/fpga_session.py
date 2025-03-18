@@ -107,7 +107,7 @@ class FPGASession:
         abc_command += 'write ' + output_design_file + '; '
         abc_command += 'if -K ' + str(self.params['fpga_mapping']['lut_inputs']) + '; '
         abc_command += 'write ' + output_design_file_mapped + '; '
-        abc_command += 'print_stats;'
+        abc_command += 'ps;'
     
         try:
             proc = check_output([self.params['abc_binary'], '-c', abc_command])
@@ -123,9 +123,9 @@ class FPGASession:
                 os.remove(output_design_file_mapped)
             return state, reward
         except Exception as e:
+            print(e)
             os.remove(output_design_file)
             os.remove(output_design_file_mapped)
-            print(e)
             return None, None
 
     def _get_metrics(self, stats):

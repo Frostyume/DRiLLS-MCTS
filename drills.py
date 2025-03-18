@@ -53,7 +53,7 @@ if __name__ == '__main__':
     print(f.renderText('DRiLLS'))
 
     if args.fixed_script:
-        params = optimize_with_fixed_script(params, args.fixed_script)
+        params = optimize_wi/home/lenovo/liushukai/AI4Chip/code/DRiLLS-master/design3th_fixed_script(params, args.fixed_script)
 
     if args.mapping == 'scl':
         fpga_mapping = False
@@ -62,18 +62,19 @@ if __name__ == '__main__':
 
     if args.mode == 'train':
         log('Starting to train the agent ..')
+        training_start_time = time.time()
         # 获取所有设计文件
         design_dir = options['design_dir']
+        playground_path = options['playground_path']
         design_files = [os.path.join(design_dir, f) for f in os.listdir(design_dir) if f.endswith('.v')]
         for design_file in design_files:
             design_params = options.copy()
             design_params['design_file'] = design_file
             design_params['design_name'] = os.path.splitext(os.path.basename(design_file))[0]
-            design_params['playground_dir'] = os.path.join('playground/', design_params['design_name'])
+            design_params['playground_dir'] = os.path.join(playground_path, design_params['design_name'])
             log(f'Starting training on {design_params["design_name"]}')
             all_rewards = []
             learner = A2C(design_params, load_model=args.load_model, fpga_mapping=fpga_mapping)
-            training_start_time = time.time()
 
             best_result_episode = -1
             no_improvement_count = 0
@@ -84,7 +85,7 @@ if __name__ == '__main__':
                 end = time.time()
                 all_rewards.append(total_reward)
                 log('Episode: ' + str(i + 1) + ' - done with total reward = ' + str(total_reward))
-                log('Episode ' + str(i + 1) + ' Run Time ~ ' + str((start - end) / 60) + ' minutes.')
+                log('Episode ' + str(i + 1) + ' Run Time ~ ' + str((end - start) / 60) + ' minutes.')
                 print('')
                 if options['early_stopping'] == 1:
                     current_best_result_episode = learner.game.get_best_result_episode()
