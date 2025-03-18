@@ -14,11 +14,12 @@ abc_binary: yosys-abc
 yosys_binary: yosys
 
 # path of the design file in one of the accepted formats by ABC
-design_dir: design
+design_dir: design/design4
 design_name: adder
 design_file: design/adder.v
 # the directory to hold the playground an agent uses to practice
-playground_dir: playground/adder
+playground_path: playground_1
+playground_dir: playground_1/adder
 
 # standard cell library mapping
 mapping:
@@ -39,12 +40,21 @@ optimizations:
   - resub
   - resub -z
   - balance
+  - drw
+  - drw -z
+  - drf
+  - drf -z
+  - irw
+  - irw -z
+  - dc2
+  - dc2 -l
+  - ifraig
 
 # agent training parameters
 episodes: 100
-iterations: 25
+iterations: 50
 model_dir: /tmp/brain/model.ckpt   # must be absolute path
 
 # Early stopping
 early_stopping: 1
-patience: 10
+patience: 20
