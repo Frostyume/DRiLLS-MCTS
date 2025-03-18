@@ -74,7 +74,6 @@ class MCTS:
         
         # 创建子节点
         for action in range(self.agent.num_actions):
-            # 这里需要实现状态转换的克隆逻辑（需在FPGASession中添加clone方法）
             new_state = self.agent.game.clone_state(node.state) 
             child = Node(new_state, parent=node)
             child.action_probs = action_probs
@@ -276,10 +275,10 @@ class A2C:
             
             # 记录MCTS策略
             episode_mcts_probs.append(mcts_probs)
-            action_probability_distribution = self.session.run(self.actor_probs, \
-                feed_dict={self.state_input: state.reshape([1, self.state_size])})
-            action = np.random.choice(range(action_probability_distribution.shape[1]), \
-                p=action_probability_distribution.ravel())
+            # action_probability_distribution = self.session.run(self.actor_probs, \
+            #     feed_dict={self.state_input: state.reshape([1, self.state_size])})
+            # action = np.random.choice(range(action_probability_distribution.shape[1]), \
+            #     p=action_probability_distribution.ravel())
             new_state, reward, done, _ = self.game.step(action)
             
             # append this step
