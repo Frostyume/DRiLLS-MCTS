@@ -11,6 +11,7 @@ import re
 import math
 import datetime
 import numpy as np
+import pandas as pd
 from subprocess import check_output
 from .features import extract_features
 
@@ -24,6 +25,9 @@ class FPGASession:
     def __init__(self, params):
         self.params = params
 
+        self.design_name = self.params['design_name']
+        self.design_file = self.params['design_file']
+        
         self.action_space_length = len(self.params['optimizations'])
         self.observation_space_size = 9     # number of features
 
@@ -38,11 +42,44 @@ class FPGASession:
 
         # logging
         self.log = None
-    
+        self.result_file = os.path.join(os.path.dirname(__file__), self.params['result_file']) 
+
     def __del__(self):
         if self.log:
             self.log.close()
     
+     def _init_result_file(self):
+        """初始化结果文件，添加表头"""
+        if not os.path.exists(self.result_file):
+            with open(self.result_file, 'w') as f:
+                f.write('Design Name,LUT-6,Levels,Episode,Iteration,Timestamp\n')
+
+    def _update_result(self):
+        """更新最佳结果到CSV文件"""
+        best_data = self.best_known_lut_6_meets_constraint
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        # 构建新记录
+        new_record = {
+            'Design Name': self.design_name,
+            'LUT-6': best_data[0],
+            'Levels': best_data[1],
+            'Episode': best_data[2],
+            'Iteration': best_data[3],
+            'Timestamp': timestamp
+        }
+        
+        # 读取现有数据并更新
+        df = pd.read_csv(self.result_file)
+        mask = df['Design Name'] == self.design_name
+        
+        if not mask.any():  # 新设计
+            df = df.append(new_record, ignore_index=True)
+        else:  # 更新现有记录
+            df.loc[mask, list(new_record.keys())] = list(new_record.values())
+        
+        df.to_csv(self.result_file, index=False)
+
     def reset(self):
         """
         resets the environment and returns the state
@@ -51,12 +88,12 @@ class FPGASession:
         self.episode += 1
         self.lut_6, self.levels = float('inf'), float('inf')
         self.sequence = ['strash']
-        self.episode_dir = os.path.join(self.params['playground_dir'], self.params['design_name'] + '_' + str(self.episode))
+        self.episode_dir = os.path.join(self.params['playground_dir'], self.design_name + '_' + str(self.episode))
         if not os.path.exists(self.episode_dir):
             os.makedirs(self.episode_dir)
         
         # logging
-        log_file = os.path.join(self.episode_dir, self.params['design_name'] + '_log_' + str(self.episode) + '.csv')
+        log_file = os.path.join(self.episode_dir, self.design_name + '_log_' + str(self.episode) + '.csv')
         if self.log:
             self.log.close()
         self.log = open(log_file, 'w')
@@ -67,7 +104,7 @@ class FPGASession:
         # logging
         self.log.write(', '.join([str(self.iteration), self.sequence[-1], str(int(self.lut_6)), str(int(self.levels))]) + '\n')
         self.log.flush()
-
+        self._init_result_file()  # 初始化结果文件
         return state
     
     def step(self, optimization):
@@ -76,6 +113,11 @@ class FPGASession:
         """
         self.sequence.append(self.params['optimizations'][optimization])
         new_state, reward = self._run()
+
+        # 检查是否更新了最佳结果
+        prev_best = self.best_known_lut_6_meets_constraint[0]
+        if self.levels <= self.params['fpga_mapping']['levels'] and self.lut_6 < prev_best:
+            self._update_result()  # 更新结果文件
 
         # logging
         if self.lut_6 < self.best_known_lut_6[0]:
@@ -100,9 +142,9 @@ class FPGASession:
         run ABC on the given design file with the sequence of commands
         """
         self.iteration += 1
-        output_design_file = os.path.join(self.episode_dir, f"{self.params['design_name']}_{self.episode}_{self.iteration}.v")
-        output_design_file_mapped = os.path.join(self.episode_dir, f"{self.params['design_name']}_{self.episode}_{self.iteration}-mapped.v")
-        abc_command = 'read ' + self.params['design_file'] + '; '
+        output_design_file = os.path.join(self.episode_dir, f"{self.design_name}_{self.episode}_{self.iteration}.v")
+        output_design_file_mapped = os.path.join(self.episode_dir, f"{self.design_name}_{self.episode}_{self.iteration}-mapped.v")
+        abc_command = 'read ' + self.design_file + '; '
         abc_command += ';'.join(self.sequence) + '; '
         abc_command += 'write ' + output_design_file + '; '
         abc_command += 'if -K ' + str(self.params['fpga_mapping']['lut_inputs']) + '; '

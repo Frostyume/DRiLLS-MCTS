@@ -20,7 +20,7 @@ design_file: design/adder.v
 # the directory to hold the playground an agent uses to practice
 playground_path: playground_1
 playground_dir: playground_1/adder
-
+result_file: result_1.csv
 # standard cell library mapping
 mapping:
   clock_period: 2000   # in pico seconds
